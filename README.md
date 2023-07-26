@@ -1,7 +1,8 @@
 # ML models for Higgs/Recoil Identification from the Higgs Boson to four quarks decay 
 
 ## Data Extraction
-Converting the data from ROOT files to numpy arrays stored in a single hdf5 file.
+extract.py extracts the data from ROOT files to numpy arrays stored in a single hdf5 file.
+Data is then normalized using normalize.py.
 
 ## Neural Networks
 Both NNs use the Tensorflow library.
