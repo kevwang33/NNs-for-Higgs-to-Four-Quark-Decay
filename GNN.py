@@ -8,7 +8,7 @@ import argparse
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve
 from keras.callbacks import EarlyStopping, ModelCheckpoint
-from keras.layers import Input, Dense, GRU, Add, Concatenate, BatchNormalization, Conv1D, Lambda, Dot
+from keras.layers import Input, Dense, BatchNormalization, Conv1D, Lambda
 from keras.models import Model
 
 
