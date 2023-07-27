@@ -1,3 +1,5 @@
+## this file helps extract data from a root file and creates a h5py to store all the numpy arrays for training
+
 import ROOT
 import sys
 import numpy as np
