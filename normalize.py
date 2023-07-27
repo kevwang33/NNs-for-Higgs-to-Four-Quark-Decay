@@ -1,3 +1,5 @@
+##this file normalizes the h5py that stores the training nd arrays
+
 import numpy as np
 import h5py
 
