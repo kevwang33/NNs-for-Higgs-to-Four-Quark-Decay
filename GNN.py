@@ -1,4 +1,4 @@
-#gnn3 + three convPredict + three dense, 64,64,64 for convParticles
+##GNN using normalized jet constituents data on top of jet four vectors
 import tensorflow as tf
 import h5py
 import keras.backend as K
@@ -6,9 +6,9 @@ import json
 import numpy as np
 import argparse
 import matplotlib.pyplot as plt
-from sklearn.metrics import roc_curve, roc_auc_score
+from sklearn.metrics import roc_curve
 from keras.callbacks import EarlyStopping, ModelCheckpoint
-from keras.layers import Input, Dense, GRU, Add, Concatenate, BatchNormalization, Conv1D, Lambda, Dot, Flatten,Dropout
+from keras.layers import Input, Dense, GRU, Add, Concatenate, BatchNormalization, Conv1D, Lambda, Dot
 from keras.models import Model
 
 
@@ -40,33 +40,25 @@ else:
 
 
 
-
+#Set controllable variables
 particlesConsidered = 30
 entriesPerParticle = 4
-
 eventDataLength = 10
 trainingDataLength = int(len(fjc_normal)*0.6)
 validationDataLength = int(len(fjc_normal)*0.2)
-
 numberOfEpochs = 100
 batchSize = 1024
 modelName = "test_model"
 
 #Creating training data
-
 print ("Preparing Data")
-
-
 particleTrainingData = np.array(fjc_normal[0:trainingDataLength,])
 trainingLabels = np.array(labels[0:trainingDataLength])
-
 TrainingJetInfo = np.array(jet_data[0:trainingDataLength,0:3])
-
 
 
 particleValidationData = np.array(fjc_normal[trainingDataLength:trainingDataLength+validationDataLength,])
 validationLabels = np.array(labels[trainingDataLength:trainingDataLength + validationDataLength])
-
 ValidationJetInfo = np.array(jet_data[trainingDataLength:trainingDataLength + validationDataLength, 0:3])
 
 
@@ -74,9 +66,6 @@ particleTestData = np.array(fjc_normal[trainingDataLength+validationDataLength:,
 testLabels = np.array(labels[trainingDataLength + validationDataLength:])
 jetTestData = np.array(jet_data[trainingDataLength+validationDataLength:])
 TestJetInfo = np.array(jet_data[trainingDataLength+validationDataLength:, 0:3])
-
-
-
 
 
 
@@ -161,13 +150,12 @@ denseEndOne = Dense(60, activation="relu", name="denseEndOne")(combJet)
 normEndOne = BatchNormalization(momentum=0.6, name="normEndOne")(denseEndOne)
 denseEndTwo = Dense(30, activation="relu", name="denseEndTwo")(normEndOne)
 denseEndThree = Dense(20, activation="relu", name="denseEndThree")(denseEndTwo)
-output = Dense(3, activation="softmax", name="output")(denseEndThree) ####Made a change to the activation function, and the number of neurons in the output layer from 1 to 3
-
+output = Dense(3, activation="softmax", name="output")(denseEndThree) 
 print("Compiling")
 
 model = Model(inputs=[inputParticle, inputJet], outputs=[output])
 
-model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['acc']) ###Made a change to the loss function
+model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['acc']) 
 print(model.summary())
 
 print('Calculating')
@@ -200,48 +188,13 @@ model.save("./data/"+modelName+",model")
 
 print("Predicting")
 predictions = model.predict([particleTestData, TestJetInfo])
-
-data_file = h5py.File("gnn99_data.hdf5", "w")
+#save predictions to a hp5y file
+data_file = h5py.File("gnn_data.hdf5", "w")
 dset1 = data_file.create_dataset("predictions", data= predictions)
 dset2 = data_file.create_dataset("testLabels", data=testLabels)
 dset3 = data_file.create_dataset('jetTestData', data = jetTestData)
 
-
-
-
-
-
-#making histograms
-def draw_hist(hist1, hist2, hist3, title):
-    fig,ax = plt.subplots()
-    hist1, bins = np.histogram(hist1, bins=50)
-    hist2, bins = np.histogram(hist2,bins = 50)
-    hist3, bins = np.histogram(hist3, bins = 50)
-    bin_centers = (bins[:-1] + bins[1:]) / 2
-    ax.plot(bin_centers, hist1, linestyle='-',  drawstyle='steps-mid', label ="four quark higgs jet")
-    ax.plot(bin_centers, hist2 , linestyle='-',  drawstyle='steps-mid', label = "three quark higgs jet")
-    ax.plot(bin_centers, hist3, linestyle='-',  drawstyle='steps-mid', label = "recoil jet")
-    ax.legend()
-    # Add labels and title
-    ax.set_xlabel('Values')
-    ax.set_ylabel('Number of events')
-    ax.set_title(title)
-#Show the plot
-    plt.savefig(title + ".png")
-
-#histograms
-recoil1 = []
-three_quark1 = []
-four_quark1 = []
-
-recoil2 = []
-three_quark2 = []
-four_quark2 = []
-
-recoil3= []
-three_quark3 = []
-four_quark3 = []
-
+#Generating plots to evaluate model performance
 
 #confusion matrix
 recoil_pred = 0
@@ -249,26 +202,9 @@ threeq_pred = 0
 fourq_pred = 0
 confusion_matrix = np.zeros((3,3))
 for i in range(len(testLabels)):
-
-    if testLabels[i].tolist() == [1,0,0]:
-        recoil1.append(predictions[i][0])
-        recoil2.append(predictions[i][1])
-        recoil3.append(predictions[i][2])
-    elif testLabels[i].tolist()==[0,1,0]:
-        three_quark1.append(predictions[i][0])
-        three_quark2.append(predictions[i][1])
-        three_quark3.append(predictions[i][2])
-    elif testLabels[i].tolist()==[0,0,1]:
-        four_quark1.append(predictions[i][0])
-        four_quark2.append(predictions[i][1])
-        four_quark3.append(predictions[i][2])
-
-    
-    #confusion matrix and efficiency curves
-
     if predictions[i].max() == predictions[i][0]:
         recoil_pred+=1
-        
+      
         if testLabels[i].tolist() == [1,0,0]:
             confusion_matrix[0,0]+=1
 
@@ -280,12 +216,12 @@ for i in range(len(testLabels)):
         
     elif predictions[i].max() == predictions[i][1]:
         threeq_pred+=1
-        
+       
         if testLabels[i].tolist() == [1,0,0]:
             confusion_matrix[0,1]+=1
         elif testLabels[i].tolist()==[0,1,0]:
             confusion_matrix[1,1]+=1
-            
+         
         elif testLabels[i].tolist()==[0,0,1]:
             confusion_matrix[2,1]+=1
 
@@ -299,40 +235,27 @@ for i in range(len(testLabels)):
             confusion_matrix[1,2]+=1
         elif testLabels[i].tolist()==[0,0,1]:
             confusion_matrix[2,2]+=1
-            
-
-
-draw_hist(four_quark1, three_quark1, recoil1, 'recoil')
-draw_hist(four_quark2, three_quark2, recoil2, 'three_quark')
-draw_hist(four_quark3, three_quark3, recoil3, 'four_quark')
-
-
+         
 
 #ROC curve
 true_label_3q =[]
 scores_3q_vs_recoil = []
 true_label_4q = []
 scores_4q_vs_recoil = []
-
 true_label_h_vs_r = []
 scores_h_vs_r = []
 for i in range(len(testLabels)):
     scores_h_vs_r.append((1-predictions[i][0]))
     true_label_h_vs_r.append((1-testLabels[i][0]))
-    if not np.isnan(predictions[i][1]/(predictions[i][0]+predictions[i][1])):
+    if not np.isnan(predictions[i][1]/(predictions[i][0]+predictions[i][1])): #remove nan values
         scores_3q_vs_recoil.append(predictions[i][1]/(predictions[i][0]+predictions[i][1]))
         true_label_3q.append(testLabels[i][1])
-    if not np.isnan(predictions[i][2]/(predictions[i][0]+predictions[i][2])):
+    if not np.isnan(predictions[i][2]/(predictions[i][0]+predictions[i][2])): #remove nan values
         scores_4q_vs_recoil.append(predictions[i][2]/(predictions[i][0]+predictions[i][2]))
         true_label_4q.append(testLabels[i][2])
-
-
+        
 fpr1, tpr1, thresholds = roc_curve(true_label_3q,scores_3q_vs_recoil)
 fpr2, tpr2, thresholds = roc_curve(true_label_4q,scores_4q_vs_recoil)
-fpr4, tpr4, thresholds = roc_curve(true_label_h_vs_r, scores_h_vs_r)
-
-
-
 plt.figure(figsize=(8, 6))
 plt.plot(fpr1, tpr1, label='three quark vs recoil')
 plt.plot(fpr2, tpr2, label='four quark vs recoil')
@@ -354,12 +277,8 @@ if fourq_pred != 0:
 else:
     confusion_matrix[:,2] = 0
 
-
 confusion_matrix= np.round(confusion_matrix,decimals=3)
-
 fig, ax = plt.subplots()
-
-#Plot the confusion matrix
 ax.imshow(confusion_matrix, cmap='Blues')
 
 # Add a colorbar
@@ -378,7 +297,6 @@ ax.set_yticklabels(['Recoil', 'Three Quark Higgs','Four Quark Higgs'])  # Replac
 # Set the alignment of the tick labels
 plt.setp(ax.get_xticklabels(), rotation=45, ha='right', rotation_mode='anchor')
 
-# Add text annotations
 for i in range(confusion_matrix.shape[0]):
     for j in range(confusion_matrix.shape[1]):
         ax.text(j, i, confusion_matrix[i, j], ha='center', va='center', color='black')
