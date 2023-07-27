@@ -8,8 +8,8 @@ if len(sys.argv) != 3:
     print ("USAGE:%s<inpput file> <output file>"%(sys.argv[0]))
     sys.exit(1)
     
-inFileName = sys.argv[1]
-outFileName = sys.argv[2]
+inFileName = sys.argv[1] #the in ROOT data file 
+outFileName = sys.argv[2] #the out h5py file
 
 
 print ("Reading from", inFileName, "and writing to", outFileName)
@@ -18,6 +18,9 @@ inFile = ROOT.TFile.Open(inFileName ,"READ")
 tree = inFile.Get("analysis")
 
 def read_first_entry(vector):
+    """
+    this function reads the first index of an input vector
+    """
     return vector[0]
 
 
