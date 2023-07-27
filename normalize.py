@@ -1,7 +1,7 @@
 import numpy as np
 import h5py
 
-
+#read in the data file to be normalized
 f = h5py.File('data_HWWqqqq.hdf5', 'a')
 fjc_data = f["jet components"][:]
 jet_data = f['jet attributes'][:]
@@ -13,6 +13,12 @@ updated_jet = jet_data.copy()
 
 
 def handle_period(number):
+    """
+    this function handles the 
+    periodicity of the jet eta 
+    and phi and keeps their 
+    value between pi and -pi
+    """
     while abs(number)>np.pi:
         if number > np.pi:
             number = number - 2*np.pi
@@ -22,6 +28,10 @@ def handle_period(number):
     return number
 
 def update_jet(four_vector):
+    """
+    this function updates the jet PT and mass 
+    from MeV to GeV
+    """
     four_vector[0] = four_vector[0]*10**-3
     four_vector[3] = four_vector[3]*10**-3
   
